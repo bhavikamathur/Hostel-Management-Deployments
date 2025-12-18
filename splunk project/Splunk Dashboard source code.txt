@@ -1,0 +1,90 @@
+<dashboard version="1.1">
+  <label>🏨 Hostel Management Monitoring</label>
+  <description>Elegant 24h dashboard with student activity breakdown</description>
+
+  <!-- Global Time Picker -->
+  <fieldset submitButton="false">
+    <input type="time" token="global_time">
+      <default>
+        <earliest>-24h@h</earliest>
+        <latest>now</latest>
+      </default>
+    </input>
+  </fieldset>
+
+  <!-- Row: App Lifecycle -->
+  <row>
+    <panel>
+      <title>🚀 Gunicorn Lifecycle</title>
+      <chart>
+        <search>
+          <query>index=* ("Starting gunicorn" OR "Booting worker" OR "Shutting down: Master") | timechart count by line</query>
+          <earliest>$global_time.earliest$</earliest>
+          <latest>$global_time.latest$</latest>
+        </search>
+        <option name="charting.chart">line</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>🗄️ DB Initialization</title>
+      <table>
+        <search>
+          <query>index=* "✅ Students table ensured" | table _time line host</query>
+          <earliest>$global_time.earliest$</earliest>
+          <latest>$global_time.latest$</latest>
+        </search>
+      </table>
+    </panel>
+  </row>
+
+  <!-- Row: Student Activity -->
+  <row>
+    <panel>
+      <title>➕ Student Additions</title>
+      <chart>
+        <search>
+          <query>index=* "POST /add" | timechart count</query>
+          <earliest>$global_time.earliest$</earliest>
+          <latest>$global_time.latest$</latest>
+        </search>
+        <option name="charting.chart">column</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>💳 Payments Made</title>
+      <chart>
+        <search>
+          <query>index=* "GET /pay" | rex field=line "GET\s+/pay/(?&lt;student_id&gt;\d+)" | stats count by student_id</query>
+          <earliest>$global_time.earliest$</earliest>
+          <latest>$global_time.latest$</latest>
+        </search>
+        <option name="charting.chart">bar</option>
+      </chart>
+    </panel>
+  </row>
+
+  <!-- Row: System Health / Activity -->
+  <row>
+    <panel>
+      <title>📊 Student Activity Breakdown</title>
+      <chart>
+        <search>
+          <query>
+            index=* 
+            | eval action=case(
+                like(line,"%GET / HTTP%"),"Homepage Views",
+                like(line,"%POST /add%"),"New Students",
+                like(line,"%GET /pay%"),"Payments",
+                like(line,"%404%") OR like(line,"%500%"),"Redirecting"
+              )
+            | stats count by action
+          </query>
+          <earliest>$global_time.earliest$</earliest>
+          <latest>$global_time.latest$</latest>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.seriesColors">["#a6cee3","#b2df8a","#fdbf6f","#fb9a99"]</option>
+      </chart>
+    </panel>
+  </row>
+</dashboard>
