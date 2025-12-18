@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hostel-db
+  labels:
+    app: hostel-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hostel-db
+  template:
+    metadata:
+      labels:
+        app: hostel-db
+    spec:
+      containers:
+        - name: mariadb
+          image: mariadb:10.6
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "admin@123"
+
+            - name: MYSQL_DATABASE
+              value: "hostel_db"
+
+            - name: MYSQL_USER
+              value: "hostel"
+
+            - name: MYSQL_PASSWORD
+              value: "admin@123"
+
+          ports:
+            - containerPort: 3306
+
+          livenessProbe:
+            exec:
+              command: ["mysqladmin","ping","-h","127.0.0.1"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+
+          readinessProbe:
+            exec:
+              command: ["mysqladmin","ping","-h","127.0.0.1"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hostel-db
+spec:
+  selector:
+    app: hostel-db
+  ports:
+    - port: 3306
+      targetPort: 3306
+  type: ClusterIP

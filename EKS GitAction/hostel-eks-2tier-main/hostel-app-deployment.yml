@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hostel-app
+  labels:
+    app: hostel-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hostel-app
+  template:
+    metadata:
+      labels:
+        app: hostel-app
+    spec:
+      containers:
+        - name: hostel-app
+          image: 502710547370.dkr.ecr.us-east-1.amazonaws.com/hostel-eks:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: DB_HOST
+              value: "hostel-db"
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_NAME
+              value: "hostel_db"
+            - name: DB_USER
+              value: "hostel"
+            - name: DB_PASSWORD
+              value: "admin@123"
+            - name: FLASK_SECRET
+              value: "dev-secret-change-me"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+

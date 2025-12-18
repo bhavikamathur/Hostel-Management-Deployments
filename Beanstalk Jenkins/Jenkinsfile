@@ -1,0 +1,80 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_DEFAULT_REGION = 'ap-south-1'
+
+        S3_BUCKET = 'beanstalkbucket234'
+        EB_APP = 'movie-review-app-final'
+        EB_ENV = 'Movie-review-app-final-env'
+    }
+
+    stages {
+
+        stage('Clean Workspace') {
+            steps {
+                sh 'rm -rf build || true'
+                sh 'mkdir build'
+            }
+        }
+
+        stage('Copy Application Files') {
+            steps {
+                sh '''
+                cp -r /home/ec2-user/movie-review-app-final/* build/
+                '''
+            }
+        }
+
+        stage('Create ZIP') {
+            steps {
+                sh '''
+                cd build
+                zip -r app.zip .
+                '''
+            }
+        }
+
+        stage('Upload to S3') {
+            steps {
+                sh '''
+                aws s3 cp build/app.zip s3://$S3_BUCKET/app-$(date +%s).zip
+                export ZIP_KEY=$(aws s3 ls s3://$S3_BUCKET/ | sort | tail -n 1 | awk '{print $4}')
+                echo "ZIP_KEY=${ZIP_KEY}" > zip_name.txt
+                '''
+            }
+        }
+
+        stage('Create EB Application Version') {
+            steps {
+                sh '''
+                ZIP_KEY=$(cat zip_name.txt | cut -d '=' -f2)
+                VERSION_LABEL="build-$(date +%s)"
+
+                aws elasticbeanstalk create-application-version \
+                    --application-name "$EB_APP" \
+                    --version-label "$VERSION_LABEL" \
+                    --source-bundle S3Bucket="$S3_BUCKET",S3Key="$ZIP_KEY"
+                
+                echo "$VERSION_LABEL" > version.txt
+                '''
+            }
+        }
+
+        stage('Deploy to EB Environment') {
+            steps {
+                sh '''
+                VERSION_LABEL=$(cat version.txt)
+                aws elasticbeanstalk update-environment \
+                    --environment-name "$EB_ENV" \
+                    --version-label "$VERSION_LABEL"
+                '''
+            }
+        }
+    }
+
+    post {
+        success { echo '🎉 Deployment SUCCESSFUL!' }
+        failure { echo '❌ Deployment FAILED.' }
+    }
+}

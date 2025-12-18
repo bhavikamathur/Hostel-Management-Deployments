@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card shadow-sm p-5 rounded-4">
+    <h3 class="mb-4 text-danger fw-bold">{{ action }} Student</h3>
+
+    <form method="POST" class="needs-validation" novalidate>
+        <div class="mb-3">
+            <label for="id" class="form-label">Student ID</label>
+            <input type="number" class="form-control form-control-lg" id="id" name="id" 
+                   value="{{ student.id if student else '' }}" {% if action=='Edit' %} readonly {% endif %} required>
+        </div>
+
+        <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <input type="text" class="form-control form-control-lg" id="name" name="name" 
+                   value="{{ student.name if student else '' }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="room" class="form-label">Room</label>
+            <input type="text" class="form-control form-control-lg" id="room" name="room" 
+                   value="{{ student.room if student else '' }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="phone" class="form-label">Phone</label>
+            <input type="text" class="form-control form-control-lg" id="phone" name="phone" 
+                   value="{{ student.phone if student else '' }}">
+        </div>
+
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control form-control-lg" id="email" name="email" 
+                   value="{{ student.email if student else '' }}">
+        </div>
+
+        <button type="submit" class="btn btn-danger btn-lg shadow-sm">{{ action }} Student</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary btn-lg shadow-sm">Cancel</a>
+    </form>
+</div>
+{% endblock %}

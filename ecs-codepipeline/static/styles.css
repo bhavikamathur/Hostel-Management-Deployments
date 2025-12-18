@@ -1,0 +1,107 @@
+/* Global Font */
+body {
+    font-family: 'Inter', sans-serif;
+    /* Gradient background */
+    background: linear-gradient(135deg, #ff8b8b, #ff4e4e, #c57676);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+}
+
+/* Smooth animated gradient */
+@keyframes gradientBG {
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
+}
+
+/* Card Styles */
+.card {
+    border-radius: 16px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 25px rgba(0,0,0,0.15);
+}
+
+/* Table Hover Animation */
+.table-hover tbody tr:hover,
+.table-row-hover:hover {
+    background: #ffe6e6;
+    transition: background 0.2s ease;
+}
+
+/* Buttons */
+.btn-danger, .btn-outline-danger {
+    transition: all 0.2s ease;
+}
+.btn-danger:hover, .btn-outline-danger:hover {
+    transform: scale(1.05);
+}
+
+/* Alerts Fade Animation */
+.fade-alert {
+    animation: fadeOut 4s forwards;
+}
+@keyframes fadeOut {
+    0% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; display: none; }
+}
+
+/* Input Focus */
+input:focus {
+    border-color: #ff1a1a;
+    box-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+}
+
+/* Badge Paid */
+.badge.bg-success {
+    background-color: #ff4d4d !important;
+}
+
+/* Smooth Hover Links */
+a {
+    transition: color 0.2s ease;
+}
+a:hover {
+    color: #990000;
+    text-decoration: none;
+}
+
+/* Hover & transitions */
+.table-hover tbody tr:hover,
+.table-row-hover:hover {
+    background: #ffe6e6;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.btn, .btn-outline-danger {
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: scale(1.05);
+}
+
+/* Spinner inside buttons */
+.pay-btn .spinner-border {
+    margin-left: 5px;
+}
+
+/* Alerts fade out */
+.fade-alert {
+    animation: fadeOut 4s forwards;
+}
+@keyframes fadeOut {
+    0% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; display: none; }
+}
+
+/* Inputs focus glow */
+input:focus {
+    border-color: #ff1a1a;
+    box-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+}
