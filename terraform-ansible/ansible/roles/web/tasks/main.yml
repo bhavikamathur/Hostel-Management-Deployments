@@ -1,0 +1,79 @@
+
+---
+- name: Update packages
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+
+- name: Install Docker and Git and pip
+  ansible.builtin.dnf:
+    name:
+      - docker
+      - git
+      - python3-pip
+    state: present
+
+- name: Enable and start Docker
+  become: yes
+  ansible.builtin.service:
+    name: docker
+    enabled: true
+    state: started
+
+- name: Add ec2-user to docker group
+  become: yes
+  ansible.builtin.user:
+    name: ec2-user
+    groups: docker
+    append: yes
+
+- name: Restart Docker (apply group)
+  become: yes
+  ansible.builtin.service:
+    name: docker
+    state: restarted
+
+- name: Clone app repo
+  ansible.builtin.git:
+    repo: "{{ app_repo }}"
+    dest: "{{ app_dir }}"
+    version: "main"
+
+- name: Create env file
+  ansible.builtin.copy:
+    dest: "{{ app_dir }}/.env"
+    mode: "0600"
+    content: |
+      DB_HOST={{ db_primary_host }}
+      DB_PORT={{ db_port }}
+      DB_NAME={{ db_name }}
+      DB_USER={{ db_user }}
+      DB_PASSWORD={{ db_password }}
+      FLASK_SECRET={{ flask_secret }}
+      FLASK_DEBUG=0
+
+# Build and run using Docker CLI with sudo to avoid socket perms issues
+
+- name: Build Docker image from app repo
+  become: yes
+  ansible.builtin.command:
+    cmd: docker build -t hostel-app:latest .
+    chdir: "{{ app_dir }}"
+
+- name: Stop old container if exists
+  become: yes
+  ansible.builtin.shell: |
+    docker rm -f hostel-app || true
+  changed_when: false
+
+- name: Run app container
+  become: yes
+  ansible.builtin.command:
+    cmd: >
+      docker run -d --name hostel-app
+      --restart always
+      --env-file {{ app_dir }}/.env
+      -p {{ app_port }}:5000
+      -v {{ app_dir }}:/app
+      hostel-app:latest
+

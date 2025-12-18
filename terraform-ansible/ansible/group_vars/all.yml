@@ -1,0 +1,23 @@
+db_name: hostel_db
+db_user: hostel_user
+db_port: 3306
+
+
+# Primary DB host = first host in [db] group
+db_primary_host: "{{ groups['db'][0] }}"
+
+# Dockerized MySQL settings
+mysql_image: "mysql:8.0"
+mysql_container_name: "mysql-hostel"
+mysql_data_dir: "/var/lib/mysql-hostel"
+
+# Secrets from vault
+mysql_root_password: "{{ vault_mysql_root_password }}"
+db_password: "{{ vault_db_password }}"
+flask_secret: "{{ vault_flask_secret }}"
+
+# Web app settings
+app_repo: "https://github.com/RohitGadhave2k3/hostel-management-2tier.git"
+app_dir: "/opt/hostel-app"
+app_port: 5000
+

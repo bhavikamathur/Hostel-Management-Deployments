@@ -1,0 +1,98 @@
+---
+# Install Docker on DB nodes
+- name: Update packages
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+
+- name: Install Docker
+  ansible.builtin.dnf:
+    name: docker
+    state: present
+
+- name: Enable and start Docker
+  become: yes
+  ansible.builtin.service:
+    name: docker
+    enabled: true
+    state: started
+
+- name: Add ec2-user to docker group
+  become: yes
+  ansible.builtin.user:
+    name: ec2-user
+    groups: docker
+    append: yes
+
+- name: Restart Docker to apply group change
+  become: yes
+  ansible.builtin.service:
+    name: docker
+    state: restarted
+
+# Prepare persistent storage
+- name: Create MySQL data directory
+  become: yes
+  ansible.builtin.file:
+    path: "{{ mysql_data_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+# Pull MySQL image
+- name: Pull MySQL image
+  become: yes
+  ansible.builtin.command:
+    cmd: docker pull {{ mysql_image }}
+
+# Check if container exists
+- name: Check if mysql-hostel container exists
+  become: yes
+  ansible.builtin.shell: |
+    docker container inspect {{ mysql_container_name }} >/dev/null 2>&1
+  register: mysql_container_exists
+  ignore_errors: true
+  changed_when: false
+
+# Create container only if not present
+- name: Run MySQL container if not present
+  become: yes
+  ansible.builtin.shell: |
+    docker run -d --name {{ mysql_container_name }} \
+      --restart always \
+      -e MYSQL_ROOT_PASSWORD='{{ mysql_root_password }}' \
+      -p {{ db_port }}:3306 \
+      -v {{ mysql_data_dir }}:/var/lib/mysql \
+      {{ mysql_image }}
+  when: mysql_container_exists.rc != 0
+
+# Wait for MySQL to accept connections (inside container)
+- name: Wait for MySQL to accept connections
+  become: yes
+  ansible.builtin.shell: |
+    until docker exec {{ mysql_container_name }} \
+      mysqladmin ping -uroot -p'{{ mysql_root_password }}' --host 127.0.0.1 --silent; do
+      sleep 5
+    done
+  changed_when: false
+
+# Initialize DB and user (only on primary DB)
+- name: Create database on primary DB
+  become: yes
+  ansible.builtin.shell: |
+    docker exec {{ mysql_container_name }} \
+      mysql -uroot -p'{{ mysql_root_password }}' \
+      -e "CREATE DATABASE IF NOT EXISTS {{ db_name }};"
+  when: inventory_hostname == groups['db'][0]
+
+- name: Create app user and grant privileges on primary DB
+  become: yes
+  ansible.builtin.shell: |
+    docker exec {{ mysql_container_name }} \
+      mysql -uroot -p'{{ mysql_root_password }}' \
+      -e "CREATE USER IF NOT EXISTS '{{ db_user }}'@'%' IDENTIFIED BY '{{ db_password }}';
+          GRANT ALL PRIVILEGES ON {{ db_name }}.* TO '{{ db_user }}'@'%';
+          FLUSH PRIVILEGES;"
+  when: inventory_hostname == groups['db'][0]
+

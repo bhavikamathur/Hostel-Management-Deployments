@@ -1,0 +1,67 @@
+---
+- name: Deploy and Configure MariaDB on Amazon Linux 2023
+  hosts: dbservers
+  become: yes
+  vars:
+    db_user: "admin"
+    db_pass: "admin123!"
+    db_name: "hostel_db"
+
+  tasks:
+
+    - name: Update system packages
+      dnf:
+        name: "*"
+        state: latest
+
+    - name: Install MariaDB 10.5 server + client
+      dnf:
+        name:
+          - mariadb105-server
+          - mariadb105
+        state: present
+
+    - name: Enable and start MariaDB service
+      systemd:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    - name: Wait for MariaDB to become ready
+      wait_for:
+        port: 3306
+        delay: 5
+        timeout: 60
+
+    - name: Install PyMySQL for Ansible MySQL modules
+      pip:
+        name: PyMySQL
+        executable: pip3
+
+    - name: Ensure MariaDB root can login via Unix socket
+      mysql_user:
+        name: root
+        host_all: yes
+        password: ""
+        login_unix_socket: /var/lib/mysql/mysql.sock
+        state: present
+
+    - name: Create Database
+      mysql_db:
+        name: "{{ db_name }}"
+        state: present
+        login_unix_socket: /var/lib/mysql/mysql.sock
+
+    - name: Create DB User
+      mysql_user:
+        name: "{{ db_user }}"
+        password: "{{ db_pass }}"
+        priv: "{{ db_name }}.*:ALL"
+        host: "%"
+        state: present
+        login_unix_socket: /var/lib/mysql/mysql.sock
+
+    - name: Restart MariaDB to apply changes
+      systemd:
+        name: mariadb
+        state: restarted

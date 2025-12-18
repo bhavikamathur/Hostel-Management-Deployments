@@ -1,0 +1,67 @@
+---
+- name: Deploy Flask App
+  hosts: webservers
+  become: yes
+  vars:
+    db_host: "10.0.3.231"          # primary DB private IP
+    db_user: "admin"
+    db_pass: "admin123!"
+    db_name: "hostel_db"
+    repo_url: "https://github.com/swdeep/hostel-ansible.git"
+    flask_secret: "prod-secret-change-me"
+    admin_email: "admin@hostel.com"
+    admin_password: "admin123"
+
+  tasks:
+    - name: Update System
+      yum:
+        name: "*"
+        state: latest
+
+    - name: Install Dependencies
+      yum:
+        name:
+          - python3
+          - python3-pip
+          - git
+        state: present
+
+    - name: Clone the Application
+      git:
+        repo: "{{ repo_url }}"
+        dest: /home/ec2-user/app
+        force: yes
+        accept_hostkey: yes
+
+    - name: Install Python requirements from requirements.txt
+      pip:
+        requirements: /home/ec2-user/app/requirements.txt
+        executable: pip3
+
+    - name: Install Gunicorn
+      pip:
+        name: gunicorn
+        executable: pip3
+
+    - name: Wait for DB to be ready
+      wait_for:
+        host: "{{ db_host }}"
+        port: 3306
+        timeout: 300
+        state: started
+
+    - name: Kill Existing Gunicorn (Restart Logic)
+      shell: "pkill gunicorn || true"
+      ignore_errors: yes
+
+    - name: Start Flask App with Gunicorn
+      shell: |
+        export DATABASE_URL="mysql+pymysql://{{ db_user }}:{{ db_pass }}@{{ db_host }}/{{ db_name }}"
+        export FLASK_SECRET="{{ flask_secret }}"
+        export ADMIN_EMAIL="{{ admin_email }}"
+        export ADMIN_PASSWORD="{{ admin_password }}"
+        nohup python3 -m gunicorn --bind 0.0.0.0:5000 app:app > app.log 2>&1 &
+      args:
+        chdir: /home/ec2-user/app
+      async: 10
+      poll: 0

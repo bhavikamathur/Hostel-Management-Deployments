@@ -1,0 +1,54 @@
+{
+  "alb_dns_name": {
+    "sensitive": false,
+    "type": "string",
+    "value": "hostel-alb-1644536938.us-east-1.elb.amazonaws.com"
+  },
+  "db_private_ips": {
+    "sensitive": false,
+    "type": [
+      "tuple",
+      [
+        "string",
+        "string"
+      ]
+    ],
+    "value": [
+      "10.0.11.157",
+      "10.0.12.96"
+    ]
+  },
+  "primary_db_private_ip": {
+    "sensitive": false,
+    "type": "string",
+    "value": "10.0.11.157"
+  },
+  "web_private_ips": {
+    "sensitive": false,
+    "type": [
+      "tuple",
+      [
+        "string",
+        "string"
+      ]
+    ],
+    "value": [
+      "10.0.1.113",
+      "10.0.2.25"
+    ]
+  },
+  "web_public_ips": {
+    "sensitive": false,
+    "type": [
+      "tuple",
+      [
+        "string",
+        "string"
+      ]
+    ],
+    "value": [
+      "100.31.237.130",
+      "54.86.195.6"
+    ]
+  }
+}

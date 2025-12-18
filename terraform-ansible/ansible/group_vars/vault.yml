@@ -1,0 +1,4 @@
+vault_mysql_root_password: "admin@123"
+vault_db_password: "admin@123"
+vault_flask_secret: "dev-secret-change-me"
+

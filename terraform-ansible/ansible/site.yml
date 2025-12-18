@@ -1,0 +1,19 @@
+---
+- name: Configure DB nodes
+  hosts: db
+  become: yes
+  gather_facts: yes
+  vars_files:
+    - group_vars/vault.yml
+  roles:
+    - db
+
+- name: Configure Web nodes
+  hosts: web
+  become: yes
+  gather_facts: yes
+  vars_files:
+    - group_vars/vault.yml
+  roles:
+    - web
+
