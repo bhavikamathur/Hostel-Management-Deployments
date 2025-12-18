@@ -5,8 +5,8 @@ pipeline {
         AWS_DEFAULT_REGION = 'ap-south-1'
 
         S3_BUCKET = 'beanstalkbucket234'
-        EB_APP = 'movie-review-app-final'
-        EB_ENV = 'Movie-review-app-final-env'
+        EB_APP = 'hostel-app-final'
+        EB_ENV = 'Hostel-app-final-env'
     }
 
     stages {
@@ -78,3 +78,4 @@ pipeline {
         failure { echo '❌ Deployment FAILED.' }
     }
 }
+
