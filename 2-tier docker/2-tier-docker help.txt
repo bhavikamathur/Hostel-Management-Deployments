@@ -1,0 +1,99 @@
+# 1. Create a Docker network**
+ 
+This is the key command:
+ 
+```bash
+docker network create mynet
+```
+ 
+This creates a **user-defined bridge network**.
+ 
+Why this is important:
+ 
+* Containers on this network can talk to each other **by name** (DNS provided by Docker).
+* They do **NOT** need IP addresses hardcoded.
+* Communication stays internal (not exposed to outside unless you publish ports).
+ 
+---
+ 
+# 2. Run MySQL container on this network**
+ 
+```bash
+docker run -d \
+  --name mysql \
+  --network mynet \
+  -e MYSQL_ROOT_PASSWORD=root123 \
+  -e MYSQL_DATABASE=mydb \
+  mysql:8
+```
+ 
+Important points:
+ 
+* `--network mynet` attaches this container to the network.
+* The container’s hostname becomes its name: **mysql**.
+* Other containers can reach it using hostname **mysql** on port **3306**.
+ 
+---
+ 
+# 3. Run Flask app container on the same network**
+ 
+```bash
+docker run -d \
+  --name flaskapp \
+  --network mynet \
+  -e DB_HOST=mysql \
+  -e DB_USER=root \
+  -e DB_PASSWORD=root123 \
+  -e DB_NAME=mydb \
+  -p 5000:5000 \
+  flask-image:latest
+```
+ 
+Key point:
+Your Flask code should connect using:
+ 
+```
+host = "mysql"         # <---- container name, not IP
+port = 3306
+```
+ 
+This works **because both containers are on the same Docker network**.
+ 
+---
+ 
+# 4. How communication works**
+ 
+* Docker provides an internal DNS resolver for user-defined networks (`mynet`).
+* When the Flask container tries to connect to hostname **mysql**, Docker resolves it to the internal IP of the MySQL container.
+* Traffic stays inside the Docker network.
+* No ports need to be exposed publicly for internal communication.
+ 
+**Example connection string:**
+ 
+```
+mysql+pymysql://root:root123@mysql:3306/mydb
+```
+ 
+---
+ 
+# 5. Summary**
+ 
+| Component           | Command / Concept                   | Purpose                             |
+| ------------------- | ----------------------------------- | ----------------------------------- |
+| **Network**         | `docker network create mynet`       | Creates private communication layer |
+| **MySQL container** | `docker run ... --network mynet`    | Joins MySQL to that network         |
+| **Flask container** | `docker run ... --network mynet`    | Joins Flask app to same network     |
+| **Connection**      | Use hostname **mysql** inside Flask | Docker resolves it automatically    |
+ 
+---
+ 
+# Final Answer in One Line
+ 
+To make two containers communicate without Docker Compose, **create a user-defined Docker network and run both containers with `--network <network-name>`**. Then your Flask app connects to MySQL using the **container name as the hostname**.
+ 
+---
+ 
+If you want, I can also show you:
+ 
+* how to test connectivity (`docker exec flaskapp ping mysql`),
+* or how to do the same with **multiple networks** (frontend/backend separation).
