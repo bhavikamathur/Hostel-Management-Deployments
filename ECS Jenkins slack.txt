@@ -1,0 +1,189 @@
+
+pipeline {
+  agent any
+
+  environment {
+    AWS_REGION    = 'us-east-1'
+
+    // Registry hostname (for docker login)
+    ECR_REGISTRY  = '502710547370.dkr.ecr.us-east-1.amazonaws.com'
+
+    // Full repository path for tagging/pushing
+    ECR_REPO      = "${ECR_REGISTRY}/hostel-management"
+
+    IMAGE_TAG     = "${env.BUILD_NUMBER}"
+
+    // Disable BuildKit to avoid buildx path
+    DOCKER_BUILDKIT = '0'
+
+    // Optional: mute Docker CLI telemetry
+    DOCKER_CLI_TELEMETRY_DISABLED = '1'
+  }
+
+  options {
+    timestamps()
+  }
+
+  stages {
+    stage('Pre-flight') {
+      steps {
+        sh '''
+          set -e
+          docker --version
+          aws --version
+          jq --version || echo "NOTE: jq not found; install via: sudo dnf install -y jq"
+          echo "== Docker info =="
+          docker info || true
+        '''
+      }
+    }
+
+    stage('Checkout from Git') {
+      steps {
+        // Clean workspace before checkout (except .git if Jenkins keeps it)
+        sh '''
+          set -e
+          echo "== Cleaning workspace =="
+          find . -mindepth 1 -maxdepth 1 -not -name ".git" -exec rm -rf {} +
+        '''
+
+        // If the repo is public, no credentials are needed.
+        // If it's private, add credentialsId to 'git' step or use 'checkout' with SCM config.
+        git url: 'https://github.com/swdeep/hostel-ansible.git',
+            branch: 'main',
+            changelog: false,
+            poll: false
+      }
+    }
+
+    stage('Login to AWS ECR') {
+      steps {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-id']]) {
+          sh '''
+            set -e
+            # Login must target the registry hostname, not the full repo path
+            aws ecr get-login-password --region $AWS_REGION | \
+              docker login --username AWS --password-stdin $ECR_REGISTRY
+          '''
+        }
+      }
+    }
+
+    stage('Build Docker Image (legacy builder)') {
+      steps {
+        sh '''
+          set -e
+          echo "== Building image with DOCKER_BUILDKIT=$DOCKER_BUILDKIT (legacy builder) =="
+          DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build -t $ECR_REPO:$IMAGE_TAG .
+          docker tag $ECR_REPO:$IMAGE_TAG $ECR_REPO:latest
+        '''
+      }
+    }
+
+    stage('Push Image to ECR') {
+      steps {
+        sh '''
+          set -e
+          echo "== Pushing tags =="
+          docker push $ECR_REPO:$IMAGE_TAG
+          docker push $ECR_REPO:latest
+        '''
+      }
+    }
+
+    stage('Update ECS Service') {
+      steps {
+        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws-id']]) {
+          sh '''
+            set -e
+
+            echo "== Describe current task definition =="
+            aws ecs describe-task-definition \
+              --task-definition hostel-task \
+              --region $AWS_REGION > current-task.json
+
+            echo "== Build new task definition with updated image for 'hostel-web' =="
+            IMAGE="$ECR_REPO:$IMAGE_TAG"
+
+            # Extract the taskDefinition object only
+            jq '.taskDefinition' current-task.json > td.json
+
+            # Update the image for the container named hostel-web
+            jq --arg IMAGE "$IMAGE" '
+              .containerDefinitions |=
+                (map(if .name == "hostel-web" then .image = $IMAGE else . end))
+            ' td.json > td.updated.json
+
+            # Remove read-only / server-managed or unsupported fields
+            jq '
+              del(
+                .revision,
+                .status,
+                .compatibilities,
+                .taskDefinitionArn,
+                .requiresAttributes,
+                .registeredAt,
+                .registeredBy
+              )
+            ' td.updated.json > td.cleaned.json
+
+            # If any optional fields are null (e.g., taskRoleArn, runtimePlatform), drop them
+            jq '
+              with_entries(select(.value != null))
+            ' td.cleaned.json > new-task-def.json
+
+            echo "== Register new task definition =="
+            aws ecs register-task-definition \
+              --cli-input-json file://new-task-def.json \
+              --region $AWS_REGION > registered.json
+
+            NEW_TD_ARN=$(jq -r '.taskDefinition.taskDefinitionArn' registered.json)
+            echo "New task definition: $NEW_TD_ARN"
+
+            echo "== Update ECS service to new task definition =="
+            aws ecs update-service \
+              --cluster hostel-cluster \
+              --service hostel-service \
+              --task-definition "$NEW_TD_ARN" \
+              --force-new-deployment \
+              --region $AWS_REGION
+
+            echo "== Wait for service to stabilize =="
+            aws ecs wait services-stable \
+              --cluster hostel-cluster \
+              --services hostel-service \
+              --region $AWS_REGION
+          '''
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      withCredentials([string(credentialsId: 'slack-id', variable: 'SLACK_URL')]) {
+        sh '''
+          set -e
+          MSG="✅ Deployment successful for hostel-management! Image: $ECR_REPO:$IMAGE_TAG"
+          # Safely build JSON payload with jq to avoid quoting issues
+          PAYLOAD=$(jq -n --arg text "$MSG" '{text: $text}')
+          curl -sS -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$SLACK_URL"
+        '''
+      }
+    }
+    failure {
+      withCredentials([string(credentialsId: 'slack-id', variable: 'SLACK_URL')]) {
+        sh '''
+          set -e
+          MSG="❌ Deployment FAILED for hostel-management. Check Jenkins logs."
+          PAYLOAD=$(jq -n --arg text "$MSG" '{text: $text}')
+          curl -sS -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$SLACK_URL"
+        '''
+      }
+    }
+  }
+}
+
+
+
+
