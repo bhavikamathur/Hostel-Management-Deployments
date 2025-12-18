@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row">
+  <div class="col-md-8">
+    <div class="card shadow-sm mb-3 p-3">
+      <h4>{{ user.name }}</h4>
+      <p class="mb-1"><strong>Room:</strong> {{ user.room or "-" }}</p>
+      <p class="mb-1"><strong>Email:</strong> {{ user.email }}</p>
+      <p class="mb-1"><strong>Phone:</strong> {{ user.phone or "-" }}</p>
+      <p class="text-muted">Joined: {{ user.created_at.strftime("%d %b %Y") }}</p>
+    </div>
+
+    <div class="card shadow-sm p-3">
+      <h5>Fees status</h5>
+      {% if user.fees_paid %}
+        <div class="alert alert-success">Paid ✅</div>
+      {% else %}
+        <div class="alert alert-danger text-muted-card">Due — contact admin to mark payment</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card p-3 shadow-sm text-center">
+      <h6>Actions</h6>
+      <a class="btn btn-outline-primary w-100 mb-2" href="{{ url_for('profile') }}">Edit Profile</a>
+      <a class="btn btn-outline-secondary w-100" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

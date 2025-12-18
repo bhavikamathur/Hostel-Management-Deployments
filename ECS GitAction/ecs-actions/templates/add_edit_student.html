@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <h2>{{ action }} Student</h2>
+
+    <form method="POST">
+
+        <div class="mb-3">
+            <label class="form-label">Full Name</label>
+            <input type="text" name="name" class="form-control" required value="{{ student.name if student }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" class="form-control" required value="{{ student.username if student }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Email Address</label>
+            <input type="email" name="email" class="form-control" required value="{{ student.email if student }}">
+        </div>
+
+        {% if action == "Add" %}
+        <div class="mb-3">
+            <label class="form-label">Password (leave empty for default)</label>
+            <input type="password" name="password" class="form-control">
+        </div>
+        {% endif %}
+
+        <div class="mb-3">
+            <label class="form-label">Room Number</label>
+            <input type="text" name="room" class="form-control" value="{{ student.room if student }}">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Phone Number</label>
+            <input type="text" name="phone" class="form-control" value="{{ student.phone if student }}">
+        </div>
+
+        <button class="btn btn-primary">{{ action }}</button>
+    </form>
+</div>
+
+{% endblock %}

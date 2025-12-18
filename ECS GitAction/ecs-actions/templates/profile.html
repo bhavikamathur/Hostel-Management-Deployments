@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row justify-content-center">
+  <div class="col-md-6">
+
+    <div class="card shadow-sm p-4">
+      <h4 class="mb-3">Edit Profile</h4>
+
+      <form method="POST">
+
+        <!-- Name -->
+        <div class="mb-3">
+          <label class="form-label">Name</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            name="name" 
+            value="{{ user.name }}" 
+            required
+          >
+        </div>
+
+        <!-- Room (read-only for students) -->
+        <div class="mb-3">
+          <label class="form-label">Room Number</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            name="room" 
+            value="{{ user.room or '-' }}" 
+            {% if user.role == 'student' %}readonly{% endif %}
+          >
+          {% if user.role == 'student' %}
+            <small class="text-muted">Only the admin can change your room number.</small>
+          {% endif %}
+        </div>
+
+        <!-- Phone -->
+        <div class="mb-3">
+          <label class="form-label">Phone</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            name="phone" 
+            value="{{ user.phone or '' }}"
+          >
+        </div>
+
+        <button class="btn btn-primary w-100" type="submit">Save Changes</button>
+
+      </form>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

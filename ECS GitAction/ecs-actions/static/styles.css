@@ -1,0 +1,162 @@
+/* Global Font */
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #0a0f25, #1a2a5a, #000000);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    color: #ffffff;
+    transition: background 0.5s ease;
+}
+
+/* Smooth animated gradient */
+@keyframes gradientBG {
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
+}
+
+/* Navbar Styles */
+.navbar-dark .navbar-brand,
+.navbar-dark .navbar-nav .nav-link,
+.navbar-dark .btn-outline-light {
+    color: #ffffff; 
+    transition: color 0.3s ease;
+}
+.navbar-dark .navbar-brand:hover,
+.navbar-dark .navbar-nav .nav-link:hover,
+.navbar-dark .btn-outline-light:hover {
+    color: #1e90ff; 
+}
+
+/* Card Styles */
+.card {
+    border-radius: 16px;
+    background: #0d1133;
+    border: 1px solid #1e90ff;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    color: #ffffff; /* Default bright text inside cards */
+}
+.card:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(30,144,255,0.5);
+    border-color: #3aa0ff;
+}
+
+/* Secondary / muted text inside cards */
+.card .text-muted-card,
+.card small.text-muted {
+    color: #888888 !important; /* Dark gray for Fee status due or muted info */
+}
+
+/* Force all headings, paragraphs, and labels inside cards bright */
+.card h4, .card h5, .card h6, .card p, .card label {
+    color: #ffffff !important;
+}
+
+/* Inputs inside cards */
+.card input,
+.card textarea,
+.card select {
+    background: #0d1133;   /* match card background closely */
+    color: #ffffff;         /* white text while typing */
+    border: 1px solid #1e90ff;
+    border-radius: 6px;
+    padding: 8px 12px;
+    transition: all 0.3s ease;
+}
+.card input::placeholder,
+.card textarea::placeholder {
+    color: #80bfff; /* light blue placeholder */
+}
+.card input:focus,
+.card textarea:focus,
+.card select:focus {
+    border-color: #3aa0ff;
+    box-shadow: 0 0 10px rgba(30,144,255,0.6);
+    outline: none;
+}
+
+/* Buttons */
+.btn, .btn-outline-danger, .btn-success {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+}
+.btn:hover {
+    transform: scale(1.05);
+}
+.btn-primary {
+    background-color: #1e90ff;
+    border-color: #1e90ff;
+    color: #ffffff;
+}
+.btn-primary:hover {
+    background-color: #3aa0ff;
+}
+
+/* Tables */
+.card .table {
+    background: #0d1133 !important;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card .table th,
+.card .table td {
+    border-bottom: 1px solid rgba(30,144,255,0.3);
+    color: #3a4255 !important; /* bright blueish text */
+}
+.card .table-hover tbody tr:hover,
+.card .table-row-hover:hover {
+    background: rgba(30,144,255,0.1);
+    transform: translateX(3px);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+/* Alerts */
+.fade-alert {
+    animation: fadeOut 4s forwards;
+}
+@keyframes fadeOut {
+    0% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; display: none; }
+}
+
+/* Badge Paid */
+.badge.bg-success {
+    background-color: #1e90ff !important;
+    color: #ffffff;
+}
+
+/* Links */
+a {
+    transition: color 0.2s ease;
+    color: #80bfff;
+}
+a:hover {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+/* Spinner inside buttons */
+.pay-btn .spinner-border {
+    margin-left: 5px;
+}
+
+/* Card & table separation */
+.card, .table {
+    z-index: 1;
+    position: relative;
+}
+
+/* Footer */
+footer {
+    color: #c0d4ff; /* bright blueish for visibility */
+    transition: color 0.3s ease;
+}
+footer a {
+    color: #80bfff;
+}
+footer a:hover {
+    color: #ffffff;
+}
